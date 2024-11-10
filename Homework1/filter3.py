@@ -1,7 +1,7 @@
 import time
-import sqlite3
+import csv
+import random
 from datetime import datetime, timedelta
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -10,10 +10,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
+
+
 def get_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
+    # Add additional options if necessary (e.g., window size for scraping)
 
     service = Service(r"C:\webdrivers\chromedriver-win64\chromedriver.exe")
     driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -23,7 +26,6 @@ def get_driver():
 
 
 def fetch_stock_data_for_issuer(issuer_code, start_date, end_date):
-
     driver = get_driver()
 
     url = f"https://www.mse.mk/mk/stats/symbolhistory/{issuer_code}"
@@ -61,34 +63,20 @@ def fetch_stock_data_for_issuer(issuer_code, start_date, end_date):
 
         WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, 'resultsTable')))
 
-        time.sleep(3)
+        time.sleep(random.uniform(2, 4))  # Random sleep between 2 and 4 seconds
 
         table = driver.find_element(By.ID, 'resultsTable')
         rows = table.find_elements(By.TAG_NAME, 'tr')
-        counter = 0
 
-        for row in reversed(rows[1:]):
-
+        for row in reversed(rows[1:]):  # Reversed to handle the most recent data first
             cells = row.find_elements(By.TAG_NAME, 'td')
 
             if len(cells) > 1:
-
                 last_column_value = cells[7].get_attribute('innerHTML').strip()
                 second_last_column_value = cells[8].get_attribute('innerHTML').strip()
 
                 if last_column_value == "0" and second_last_column_value == "0":
                     continue
-
-                if cells[0].get_attribute('innerHTML').strip() == "21.10.2024":
-                    print(f"[INFO]  cell 2 {cells[1].get_attribute('innerHTML')}")
-                    print(f"[INFO]  cell 3 {cells[2].get_attribute('innerHTML')}")
-                    print(f"[INFO]  cell 4 {cells[3].get_attribute('innerHTML')}")
-                    print(f"[INFO]  cell 5 {cells[4].get_attribute('innerHTML')}")
-                    print(f"[INFO]  cell 2 Form {format_price(cells[1].get_attribute('innerHTML'))}")
-                    print(f"[INFO]  cell 3 Form {format_price(cells[2].get_attribute('innerHTML'))}")
-                    print(f"[INFO]  cell 4 Form {format_price(cells[3].get_attribute('innerHTML'))}")
-                    print(f"[INFO]  cell 5 Form {format_price(cells[4].get_attribute('innerHTML'))}")
-
 
                 data = {
                     'date': cells[0].get_attribute('innerHTML').strip(),
@@ -102,12 +90,10 @@ def fetch_stock_data_for_issuer(issuer_code, start_date, end_date):
                     'total_turnover_in_denars': format_price(cells[8].get_attribute('innerHTML').strip())
                 }
                 all_data.append(data)
-                if cells[0].get_attribute('innerHTML').strip() == "21.10.2024":
-                    print(f"[INFO]  {data}")
 
         current_date = next_date
 
-        time.sleep(2)
+        time.sleep(random.uniform(1, 2))  # Random sleep for next iteration to avoid pattern detection
 
     print("[INFO] Data extraction complete. Closing the WebDriver.")
     driver.quit()
@@ -116,15 +102,12 @@ def fetch_stock_data_for_issuer(issuer_code, start_date, end_date):
 
 
 def format_price(value):
+    """Format price values properly, handling different formats."""
     if value == "" or value is None:
         return "0.00"
 
-
     if isinstance(value, float):
         value = str(value)
-
-    # if len(value) > 2 and value[-3] == '.':
-    #     return value  # No formatting needed if the third-to-last character is a dot
 
     is_negative = value.startswith('-')
     if is_negative:
@@ -142,7 +125,6 @@ def format_price(value):
         parts = value.split('.')
         if len(parts) > 2:
             value = f"{parts[0]}.{''.join(parts[1:2])}"  # Join all parts after the first period
-            parts = value.split('.')  # Re-split after cleaning the string
         integer_part, decimal_part = parts[0], parts[1]
     else:
         integer_part, decimal_part = value, '00'
@@ -162,54 +144,38 @@ def format_price(value):
     return formatted_value
 
 
-print(format_price("1.650,00"))
-
 def check_for_zero(value):
-    if value == "" or value is None:
-        return "0"
-    else:
-        return value
+    """Check if the value is empty or None and return '0'."""
+    return "0" if value == "" or value is None else value
 
 
+def write_data_to_csv(issuer_code, stock_data):
+    """Write the fetched stock data to a CSV file."""
+    filename = "stock_data.csv"
 
-def insert_data_into_db(issuer_code, stock_data):
-    conn = sqlite3.connect('stock_data.db')
-    cursor = conn.cursor()
+    # Check if the file already exists, and if not, write headers
+    file_exists = False
+    try:
+        with open(filename, 'r', newline='', encoding='utf-8') as f:
+            file_exists = True
+    except FileNotFoundError:
+        pass  # File doesn't exist, will be created
 
-    print("[INFO] Inserting data into the database...")
+    with open(filename, 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            'issuer_code', 'date', 'last_transaction_price', 'max_price', 'min_price',
+            'average_price', 'percentage_change', 'quantity', 'turnover_best_in_denars',
+            'total_turnover_in_denars'
+        ])
 
-    for entry in stock_data:
-        date = entry['date']
-        last_transaction_price = format_price(entry['last_transaction_price'])
-        max_price = format_price(entry.get('max_price', 0.0))
-        min_price = format_price(entry.get('min_price', 0.0))
-        average_price = format_price(entry.get('average_price', 0.0))
-        percentage_change = entry.get('percentage_change', 0.0)
-        quantity = entry.get('quantity', 0)
-        turnover_best_in_denars = format_price(entry.get('turnover_best_in_denars', 0.0))
-        total_turnover_in_denars = format_price(entry.get('total_turnover_in_denars', 0.0))
+        if not file_exists:
+            writer.writeheader()  # Write header only if file doesn't exist
 
-        cursor.execute('''
-            SELECT 1 FROM stock_prices WHERE issuer_code = ? AND date = ?
-        ''', (issuer_code, date))
+        for entry in stock_data:
+            entry['issuer_code'] = issuer_code  # Add issuer_code to each entry
+            writer.writerow(entry)
 
-        if cursor.fetchone() is None:
-
-            cursor.execute('''
-                INSERT INTO stock_prices (
-                    issuer_code, date, last_transaction_price, max_price, min_price,
-                    average_price, percentage_change, quantity, turnover_best_in_denars,
-                    total_turnover_in_denars
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                issuer_code, date, last_transaction_price, max_price, min_price,
-                average_price, percentage_change, quantity, turnover_best_in_denars,
-                total_turnover_in_denars
-            ))
-
-    conn.commit()
-    conn.close()
-    print("[INFO] Data inserted into the database successfully.")
+    print(f"[INFO] Data for {issuer_code} written to {filename}.")
 
 
 def fill_missing_data_for_issuer(issuer_code, start_date):
@@ -222,7 +188,16 @@ def fill_missing_data_for_issuer(issuer_code, start_date):
         print(f"[ERROR] No data fetched for {issuer_code} from {start_date} to {end_date}.")
         return
 
-    print(f"[INFO] Inserting data for {issuer_code} into the database...")
-    insert_data_into_db(issuer_code, stock_data)
+    print(f"[INFO] Writing data for {issuer_code} into CSV file...")
+    write_data_to_csv(issuer_code, stock_data)
 
     print(f"[INFO] Data for {issuer_code} from {start_date} to {end_date} successfully filled in.")
+
+
+# Example usage:
+if __name__ == "__main__":
+    # Replace with actual issuer codes and start date
+    issuer_codes = ['REPL', 'ADIN']
+    for issuer_code in issuer_codes:
+        start_date = "01.01.2020"  # Replace with the actual start date
+        fill_missing_data_for_issuer(issuer_code, start_date)
