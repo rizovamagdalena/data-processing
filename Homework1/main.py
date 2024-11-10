@@ -53,15 +53,11 @@ def main():
         print("[ERROR] No issuer dates found. Exiting process.")
         return
 
-    # # Step 3: Fetch missing data for each code and insert into the database
-    # print("[INFO] Filling missing data in Filter 3...")
-    # for issuer_code, start_date in issuer_dates.items():
-    #     print(f"[INFO] NOW FOR ISSUER {issuer_code}")
-    #     fill_missing_data_for_issuer(issuer_code, start_date)
-
-    start_date = issuer_dates.get("ADIN")
-    #just for ADIN for debugin
-    fill_missing_data_for_issuer("ADIN", start_date)
+    # Step 3: Fetch missing data for each code and insert into the database
+    print("[INFO] Filling missing data in Filter 3...")
+    for issuer_code, start_date in issuer_dates.items():
+        print(f"[INFO] NOW FOR ISSUER {issuer_code}")
+        fill_missing_data_for_issuer(issuer_code, start_date)
 
     end_time = time.time()
     print("[INFO] Process completed.")
