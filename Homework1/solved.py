@@ -51,6 +51,8 @@ def check_for_zero(value):
     return "0" if value == "" or value is None else value
 
 
+
+
 # Initialize Playwright
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
@@ -97,11 +99,22 @@ with sync_playwright() as p:
                 # Navigate to the specific stock code page
                 page.goto(f'https://www.mse.mk/mk/stats/symbolhistory/{stock_code}')
 
+
+
                 # Loop through the years to gather data
                 year_counter = 10
                 while year_counter >= 0:
+
                     try:
                         # Prepare the date range for the search
+
+                        # Check for table existence
+                        table_exists = page.query_selector("#resultsTable") is not None
+
+                        if not table_exists:
+                            print(f"No data table found for stock code: {stock_code}")
+                            year_counter -= 1
+                            continue  # Skip processing if table doesn't exist
                         year = 2024 - year_counter
                         new_from_date = f"01.1.{year}"
                         new_to_date = f"31.12.{year}"
@@ -119,8 +132,10 @@ with sync_playwright() as p:
 
                         search_button.click()
 
-                        page.wait_for_selector("#resultsTable", timeout=20000)
+                        # Wait for the table to load
+                        page.wait_for_selector("#resultsTable", timeout=3000)  # 3 seconds timeout for each table load
 
+                        # Process the table data
                         table_of_data = page.query_selector("#resultsTable")
                         rows = table_of_data.inner_html()
                         soup = BeautifulSoup(rows, 'html.parser')
@@ -133,13 +148,17 @@ with sync_playwright() as p:
                             if len(data) < 9:
                                 continue
 
-                            if str(data[7].get_text()) == "0" and str(data[8].get_text()) == "0":  # Index 7 and 8 are the 8th and 9th cells
+                            if str(data[7].get_text()) == "0" and str(
+                                    data[8].get_text()) == "0":  # Skip rows with 0 values
                                 continue
 
                             cleaned_data = [stock_code, str(data[0].get_text()), format_price(str(data[1].get_text())),
-                                            format_price(str(data[2].get_text())), format_price(str(data[3].get_text())),
-                                            format_price(str(data[4].get_text())), check_for_zero(str(data[5].get_text())),
-                                            check_for_zero(str(data[6].get_text())), format_price(str(data[7].get_text())),
+                                            format_price(str(data[2].get_text())),
+                                            format_price(str(data[3].get_text())),
+                                            format_price(str(data[4].get_text())),
+                                            check_for_zero(str(data[5].get_text())),
+                                            check_for_zero(str(data[6].get_text())),
+                                            format_price(str(data[7].get_text())),
                                             format_price(str(data[8].get_text()))]
 
                             writer.writerow(cleaned_data)
