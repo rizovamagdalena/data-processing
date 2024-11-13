@@ -112,7 +112,6 @@ with sync_playwright() as p:
                         table_exists = page.query_selector("#resultsTable") is not None
 
                         if not table_exists:
-                            print(f"No data table found for stock code: {stock_code}")
                             year_counter -= 1
                             continue  # Skip processing if table doesn't exist
                         year = 2024 - year_counter
@@ -166,7 +165,6 @@ with sync_playwright() as p:
                         # Move to the next year after processing the current year's data
                         year_counter -= 1
                     except Exception as e:
-                        print(f"Error processing data for stock code {stock_code} in year {2024 - year_counter}: {e}")
                         year_counter -= 1
 
             except Exception as e:
