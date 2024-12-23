@@ -88,17 +88,26 @@ def search_stocks():
 @app.route('/api/stocks/<string:code>', methods=['GET'])
 def get_stock_data(code):
     try:
+        # Get the start and end dates if present in the query params
+        start_date = request.args.get('start_date', None)
+        end_date = request.args.get('end_date', None)
+
         # The `code` parameter is dynamically passed via URL
         issuer_code = code
 
-        print(f"Received request for stock data with issuer code: {issuer_code}")
+        # print(f"Fetching data for stock: {code} from {start_date} to {end_date}")
 
-        # Query to get all data for the specified issuer
+        # Base query to get stock data
         query = """
                    SELECT * FROM stock_data
                    WHERE code = ?
                """
         params = [issuer_code]
+
+        # Apply date filter if start_date and end_date are provided
+        if start_date and end_date:
+            query += " AND date BETWEEN ? AND ?"
+            params.extend([start_date, end_date])
 
         # Get data from the database
         conn = get_db_connection()
@@ -113,17 +122,16 @@ def get_stock_data(code):
 
         # Convert the rows to a list of dictionaries (for easier JSON serialization)
         data = [dict(row) for row in rows]
-        print("Response data:", data)
+        # print("Response data:", data)
 
         return jsonify(data)
 
     except sqlite3.DatabaseError as e:
-        # Handle database error
         return jsonify({"error": "Database error", "message": str(e)}), 500
 
     except Exception as e:
-        # Catch all for any other unexpected errors
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
+
 
 
 

@@ -1,4 +1,6 @@
+import datetime
 import time
+from datetime import datetime
 import sqlite3
 import traceback
 from bs4 import BeautifulSoup
@@ -113,53 +115,56 @@ def scrape_data():
 
         start_time = time.time()
 
+        current_year = datetime.now().year
+
         try:
             for stock_code in stock_codes:
                 print(f"Saving data for stock: {stock_code}")
-                # Start year_counter for each stock code
-                year_counter = 10  # Loop over the last 2 years (e.g. 2023 and 2024)
-                current_year = 2024
 
-                while year_counter >= 1:
+                # Navigate to the specific stock code page
+                page.goto(f'https://www.mse.mk/mk/stats/symbolhistory/{stock_code}')
+
+                # Loop over the last 10 years until today
+                for year in range(current_year, current_year - 10, -1):
                     try:
-                        year = current_year - year_counter
-                        new_from_date = f"01.01.{year}"
-                        new_to_date = f"31.12.{year}"
-
                         # Check for table existence
                         table_exists = page.query_selector("#resultsTable") is not None
 
                         if not table_exists:
-                            year_counter -= 1
                             continue  # Skip processing if table doesn't exist
 
-                        # Find and set fields for dates and search button for this stock code
-                        search_button = page.query_selector(".btn.btn-primary-sm")
+                        new_from_date = f"01.01.{year}"
+                        new_to_date = f"31.12.{year}"
+
+                        # Fill the date fields and search for data
                         from_date_input = page.query_selector("#FromDate")
                         to_date_input = page.query_selector("#ToDate")
+                        search_button = page.query_selector(".btn.btn-primary-sm")
 
                         from_date_input.fill(new_from_date)
                         to_date_input.fill(new_to_date)
-
                         search_button.click()
 
                         # Wait for the table to load
-                        page.wait_for_selector("#resultsTable", timeout=2000)
+                        page.wait_for_selector("#resultsTable", timeout=5000)
 
-                        # Process the table data
+                        # Process table content
                         table_of_data = page.query_selector("#resultsTable")
                         rows = table_of_data.inner_html()
                         soup = BeautifulSoup(rows, 'html.parser')
                         rows = soup.find_all("tr")
 
-                        # Process each row and write to the database
+                        if len(rows) <= 1:
+                            print(f"No data found for {stock_code} in {year}")
+                            continue  # Skip if no valid rows for this year
+
+                        # Process each row
                         for row in rows:
                             data = row.find_all('td')
 
                             if len(data) < 9:
                                 continue
 
-                            # Skip rows
                             if str(data[2].get_text()) == "" and str(data[3].get_text()) == "":
                                 continue
 
@@ -176,20 +181,17 @@ def scrape_data():
                                 format_price(str(data[8].get_text()))  # Total revenue
                             )
 
-                            # Insert cleaned data for each stock code
                             cursor.execute(''' 
-                                INSERT INTO stock_data (
-                                    code, date, last_price, max_price, min_price, avg_price, percent_change, 
-                                    quantity, revenue_best_denars, total_revenue_denars
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ''', cleaned_data)
+                                        INSERT INTO stock_data (
+                                            code, date, last_price, max_price, min_price, avg_price, percent_change, 
+                                            quantity, revenue_best_denars, total_revenue_denars
+                                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    ''', cleaned_data)
                             conn.commit()
 
-                        year_counter -= 1  # Move to the previous year
-
                     except Exception as e:
-                        print(f"Error during scraping year {current_year - year_counter} for stock {stock_code}: {e}")
-                        year_counter -= 1  # Continue even if error happens for this year
+                        print(f"Error scraping {stock_code} for year {year}: {e}")
+                        continue
 
         except Exception as e:
             print(f"Scraping error: {e}")
