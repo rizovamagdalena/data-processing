@@ -109,8 +109,8 @@ const Home = () => {
                 <button style={homePageStyles.button} onClick={() => goToPage("stock-trends")}>
                     STOCK TRENDS
                 </button>
-                <button style={homePageStyles.button} onClick={() => goToPage("comparison")}>
-                    COMPARISON
+                <button style={homePageStyles.button} onClick={() => goToPage("stock_indicators/ADIN/1D")}>
+                    STOCK INDICATORS
                 </button>
             </div>
         </div>
