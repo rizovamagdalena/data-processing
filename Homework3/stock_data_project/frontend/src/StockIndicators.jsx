@@ -1,11 +1,90 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { CircularProgress, FormControl, InputLabel, Select, MenuItem, Button } from "@mui/material";
+import { CircularProgress, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Box } from "@mui/system";
+
+const styles = {
+    container: {
+        padding: '40px',
+        background: "linear-gradient(to right, #23395d, #0a2440)",
+        minHeight: "100vh",
+        color: "white",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+    },
+    header: {
+        fontSize: "2.5rem",
+        textAlign: "center",
+        marginBottom: "20px",
+        fontWeight: "bold",
+        color: "#fff",  // Ensure header color is white
+    },
+    controls: {
+        width: "100%",
+        maxWidth: "600px",
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "20px",
+        marginBottom: "40px",
+    },
+    formControl: {
+        marginBottom: "20px",
+        backgroundColor: "#fff",
+        borderRadius: "8px",
+    },
+    inputLabel: {
+        color: "#23395d",  // Set label color to dark shade
+    },
+    select: {
+        backgroundColor: "#fff",
+        borderRadius: "8px",
+        color: "#23395d",  // Dark text for better contrast in select input
+    },
+    loadingSpinner: {
+        display: "block",
+        margin: "20px auto",
+        color: "#0ac4ff",
+    },
+    table: {
+        width: "100%",
+        borderCollapse: "collapse",
+        borderRadius: "8px",
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+        backgroundColor: "#fff",
+        marginTop: '20px',
+    },
+    headerRow: {
+        backgroundColor: "#0ac4ff",
+        color: "#23395d", // Text color for better visibility
+        textAlign: "left",
+    },
+    headerCell: {
+        padding: "15px",
+        borderBottom: "2px solid #ddd",
+        fontWeight: "bold",
+        color: "#23395d",  // Dark color for header text in the table
+    },
+    rowEven: {
+        borderBottom: "1px solid #ddd",
+        backgroundColor: "#f7f7f7",
+    },
+    rowOdd: {
+        borderBottom: "1px solid #ddd",
+        backgroundColor: "#ffffff",  // Slightly contrasting background for odd rows
+    },
+    cell: {
+        padding: "12px",
+        textAlign: "left",
+        color: "#23395d",  // Dark color for table cell text
+    },
+};
 
 const StockIndicators = () => {
     const [stockCodes, setStockCodes] = useState([]);
     const [selectedStockCode, setSelectedStockCode] = useState("");
-    const [selectedPeriod, setSelectedPeriod] = useState("1D"); // Default to "1D" for one day
+    const [selectedPeriod, setSelectedPeriod] = useState();
     const [stockData, setStockData] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -14,7 +93,7 @@ const StockIndicators = () => {
         const fetchStockCodes = async () => {
             try {
                 const response = await axios.get("http://localhost:5000/api/stocks");
-                setStockCodes(Object.keys(response.data)); // Assuming stock codes are the keys
+                setStockCodes(Object.keys(response.data));
             } catch (error) {
                 console.error("Error fetching stock codes:", error);
             }
@@ -27,7 +106,7 @@ const StockIndicators = () => {
         setLoading(true);
         try {
             const response = await axios.get(`http://localhost:5000/stock/stock_indicators/${code}/${period}`);
-            setStockData(response.data); // Assuming the data is an array of objects like [{date, cci, vpt, signal}]
+            setStockData(response.data);
         } catch (error) {
             console.error("Error fetching stock indicators:", error);
         }
@@ -52,68 +131,72 @@ const StockIndicators = () => {
         if (!stockData) return null;
 
         return (
-            <div style={{ marginTop: "30px", overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", borderRadius: "8px" }}>
+            <Box sx={{ overflowX: 'auto', marginTop: 3 }}>
+                <table style={styles.table}>
                     <thead>
-                    <tr style={{ backgroundColor: "#0ac4ff", color: "white", textAlign: "left" }}>
-                        <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>Date</th>
-                        <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>CCI</th>
-                        <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>VPT</th>
-                        <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>Signal</th>
+                    <tr style={styles.headerRow}>
+                        <th style={styles.headerCell}>Date</th>
+                        <th style={styles.headerCell}>CCI</th>
+                        <th style={styles.headerCell}>VPT</th>
+                        <th style={styles.headerCell}>Signal</th>
                     </tr>
                     </thead>
                     <tbody>
                     {stockData.map((indicator, index) => (
-                        <tr key={index} style={{ borderBottom: "1px solid #ddd" }}>
-                            <td style={{ padding: "10px", textAlign: "left" }}>{indicator.date}</td>
-                            <td style={{ padding: "10px", textAlign: "left" }}>{indicator.cci}</td>
-                            <td style={{ padding: "10px", textAlign: "left" }}>{indicator.vpt}</td>
-                            <td style={{ padding: "10px", textAlign: "left" }}>{indicator.signal}</td>
+                        <tr key={index} style={index % 2 === 0 ? styles.rowEven : styles.rowOdd}>
+                            <td style={styles.cell}>{indicator.date}</td>
+                            <td style={styles.cell}>{indicator.cci}</td>
+                            <td style={styles.cell}>{indicator.vpt}</td>
+                            <td style={styles.cell}>{indicator.signal}</td>
                         </tr>
                     ))}
                     </tbody>
                 </table>
-            </div>
+            </Box>
         );
     };
 
     return (
-        <div style={{ padding: '40px', background: "linear-gradient(to right, #23395d, #0a2440)", minHeight: "100vh" }}>
-            <h1 style={{ color: "white", textAlign: "center", marginBottom: "30px", fontWeight: "bold" }}>Stock Indicators</h1>
+        <div style={styles.container}>
+            <Box sx={{ maxWidth: 1200, margin: '0 auto' }}>
+                <h1 style={styles.header}>Stock Indicators</h1>
 
-            {/* Dropdown for Stock Codes */}
-            <FormControl fullWidth style={{ marginBottom: '20px' }}>
-                <InputLabel style={{ color: "#fff" }}>Stock Code</InputLabel>
-                <Select
-                    value={selectedStockCode}
-                    onChange={handleStockChange}
-                    style={{ backgroundColor: "#fff", borderRadius: "8px" }}
-                >
-                    {stockCodes.map((code) => (
-                        <MenuItem key={code} value={code}>{code}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+                <div style={styles.controls}>
+                    {/* Dropdown for Stock Codes */}
+                    <FormControl fullWidth style={styles.formControl}>
+                        <InputLabel style={styles.inputLabel}>Stock Code</InputLabel>
+                        <Select
+                            value={selectedStockCode}
+                            onChange={handleStockChange}
+                            style={styles.select}
+                        >
+                            {stockCodes.map((code) => (
+                                <MenuItem key={code} value={code}>{code}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
 
-            {/* Dropdown for Period (1D, 1W, 1M) */}
-            <FormControl fullWidth style={{ marginBottom: '20px' }}>
-                <InputLabel style={{ color: "#fff" }}>Period</InputLabel>
-                <Select
-                    value={selectedPeriod}
-                    onChange={handlePeriodChange}
-                    style={{ backgroundColor: "#fff", borderRadius: "8px" }}
-                >
-                    <MenuItem value="1D">1 Day</MenuItem>
-                    <MenuItem value="1W">1 Week</MenuItem>
-                    <MenuItem value="1M">1 Month</MenuItem>
-                </Select>
-            </FormControl>
+                    {/* Dropdown for Period (1D, 1W, 1M) */}
+                    <FormControl fullWidth style={styles.formControl}>
+                        <InputLabel style={styles.inputLabel}>Period</InputLabel>
+                        <Select
+                            value={selectedPeriod}
+                            onChange={handlePeriodChange}
+                            style={styles.select}
+                        >
+                            <MenuItem value="1D">1 Day</MenuItem>
+                            <MenuItem value="1W">1 Week</MenuItem>
+                            <MenuItem value="1M">1 Month</MenuItem>
+                        </Select>
+                    </FormControl>
+                </div>
 
-            {/* Loading spinner */}
-            {loading && <CircularProgress style={{ display: "block", margin: "20px auto", color: "#0ac4ff" }} />}
+                {/* Loading spinner */}
+                {loading && <CircularProgress style={styles.loadingSpinner} />}
 
-            {/* Render stock indicators table */}
-            {renderTable()}
+                {/* Render stock indicators table */}
+                {renderTable()}
+            </Box>
         </div>
     );
 };
