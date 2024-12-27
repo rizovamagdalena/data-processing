@@ -1,3 +1,6 @@
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from datetime import datetime
 from flask import Flask, jsonify, request
 import sqlite3
 from scrapingData import scrape_data
@@ -7,42 +10,54 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# Initialize Background Scheduler
+scheduler = BackgroundScheduler(daemon=True)
 
-
-def run_scraping():
-    if not os.path.exists('stock_data.db'):  # Check if the DB already exists
-        print("Starting scraping process...")
-        scrape_data()
-    else:
-        print("Scraping process already completed. Skipping.")
-
+# Utility Functions
 def get_db_connection():
+    """Returns a database connection with SQLite."""
     conn = sqlite3.connect('stock_data.db')
-    conn.row_factory = sqlite3.Row  # To fetch rows as dictionaries
+    conn.row_factory = sqlite3.Row  # Fetch rows as dictionaries
     return conn
 
+# Periodic Task to scrape data every day
+def scheduled_scrape():
+    print(f"Scraping started at {datetime.now()}")
+    scrape_data()
 
+# Configure Scheduler to run every 24 hours
+scheduler.add_job(
+    scheduled_scrape,
+    IntervalTrigger(hours=24),
+    next_run_time=datetime.now()  # Starts scraping immediately upon server launch
+)
+
+# Start scheduler
+scheduler.start()
+
+# API Endpoints
 @app.route('/api/stocks', methods=['GET'])
 def get_all_stocks():
+    """
+    Returns all distinct stock codes with their related historical data.
+    The response includes an array of records for each stock code.
+    """
     try:
-
-        conn = get_db_connection()  # Use helper function for connection
+        conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Query to get all data
+        # Fetch unique stock codes
         cursor.execute("SELECT DISTINCT code FROM stock_data")
-        stock_codes = cursor.fetchall()
+        stock_codes = [row['code'] for row in cursor.fetchall()]
 
         response = {}
-
         for stock_code in stock_codes:
-            stock_code = stock_code['code']
             cursor.execute("SELECT * FROM stock_data WHERE code = ?", (stock_code,))
             stock_data = cursor.fetchall()
             response[stock_code] = [dict(row) for row in stock_data]
 
         conn.close()
-        return jsonify(response)
+        return jsonify(response), 200
 
     except sqlite3.DatabaseError as e:
         return jsonify({"error": "Database error", "message": str(e)}), 500
@@ -53,78 +68,63 @@ def get_all_stocks():
 
 @app.route('/api/search', methods=['GET'])
 def search_stocks():
+    """
+    Searches stocks based on the query provided.
+    Matches stock codes starting with the search query.
+    """
     try:
-        search_query = request.args.get('query', '')  # Get search query from URL parameter
+        search_query = request.args.get('query', '').strip()
         if not search_query:
-            return jsonify({"message": "No query provided."}), 400
+            return jsonify({"message": "Search query is required."}), 400
 
-        # Query to find all unique stocks that start with the search query in the 'code' column
         query = """
             SELECT DISTINCT code FROM stock_data
-            WHERE code LIKE ? 
+            WHERE code LIKE ?
         """
-        params = [f"{search_query}%"]  # The '%' wildcard allows matching all codes starting with the query
-
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        cursor.execute(query, (f"{search_query}%",))
+        rows = [row['code'] for row in cursor.fetchall()]
         conn.close()
 
         if not rows:
-            return jsonify({"message": "No stocks found matching your query."}), 404
+            return jsonify({"message": "No stocks match your query."}), 404
 
-        # Return just the list of unique stock codes
-        data = [row[0] for row in rows]
-        return jsonify(data)
+        return jsonify(rows), 200
 
     except sqlite3.DatabaseError as e:
         return jsonify({"error": "Database error", "message": str(e)}), 500
     except Exception as e:
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
-
 
 
 @app.route('/api/stocks/<string:code>', methods=['GET'])
 def get_stock_data(code):
+    """
+    Retrieves stock data for a given code, optionally filtered by date range.
+    Supports start_date and end_date query parameters.
+    """
     try:
-        # Get the start and end dates if present in the query params
-        start_date = request.args.get('start_date', None)
-        end_date = request.args.get('end_date', None)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
 
-        # The `code` parameter is dynamically passed via URL
-        issuer_code = code
+        query = "SELECT * FROM stock_data WHERE code = ?"
+        params = [code]
 
-        # print(f"Fetching data for stock: {code} from {start_date} to {end_date}")
-
-        # Base query to get stock data
-        query = """
-                   SELECT * FROM stock_data
-                   WHERE code = ?
-               """
-        params = [issuer_code]
-
-        # Apply date filter if start_date and end_date are provided
         if start_date and end_date:
             query += " AND date BETWEEN ? AND ?"
             params.extend([start_date, end_date])
 
-        # Get data from the database
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(query, params)
-        rows = cursor.fetchall()
+        rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
 
-        # If no data is found for the issuer, return an empty array
         if not rows:
-            return jsonify({"message": "No data found for the given issuer code."}), 404
+            return jsonify({"message": f"No data found for stock code {code}."}), 404
 
-        # Convert the rows to a list of dictionaries (for easier JSON serialization)
-        data = [dict(row) for row in rows]
-        # print("Response data:", data)
-
-        return jsonify(data)
+        return jsonify(rows), 200
 
     except sqlite3.DatabaseError as e:
         return jsonify({"error": "Database error", "message": str(e)}), 500
@@ -133,9 +133,82 @@ def get_stock_data(code):
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
 
 
+@app.route('/stock/stock_indicators/<string:code>/<string:period>', methods=['GET'])
+def get_stock_indicators(code, period):
+    """
+    Fetches stock indicators (e.g., RSI, SMA, CCI) for a specific stock and time period.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        query = """
+            SELECT date, cci, vpt, signal FROM stock_indicators
+            WHERE code = ? AND time_period = ?
+        """
+        cursor.execute(query, (code, period))
+        indicators = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+
+        if not indicators:
+            return jsonify({"message": f"No indicators found for stock {code} and period {period}."}), 404
+
+        return jsonify(indicators), 200
+
+    except sqlite3.DatabaseError as e:
+        return jsonify({"error": "Database error", "message": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": "Unexpected error", "message": str(e)}), 500
 
 
+def get_featured_stock_of_the_day():
+    """Find the featured stock of the day based on the highest percent change."""
+    conn = sqlite3.connect('stock_data.db')
+    cursor = conn.cursor()
 
+    # Get the latest date available in the stock_data table
+    cursor.execute("SELECT MAX(date) FROM stock_data")
+    latest_date = cursor.fetchone()[0]
+
+    # Find the stock with the highest percent change on the latest date
+    cursor.execute("""
+        SELECT code, date, last_price, percent_change
+        FROM stock_data
+        WHERE date = ?
+        ORDER BY percent_change DESC
+        LIMIT 1
+    """, (latest_date,))
+
+    featured_stock = cursor.fetchone()
+    conn.close()
+
+    if featured_stock:
+        featured_stock_data = {
+            "code": featured_stock[0],
+            "date": featured_stock[1],
+            "last_price": featured_stock[2],
+            "percent_change": featured_stock[3]
+        }
+        return featured_stock_data
+    else:
+        return None
+
+
+@app.route('/api/featured-stock', methods=['GET'])
+def get_featured_stock():
+    """Fetch and return the featured stock of the day based on the highest percent change."""
+    try:
+        featured_stock = get_featured_stock_of_the_day()
+
+        if featured_stock:
+            return jsonify(featured_stock), 200
+        else:
+            return jsonify({"message": "No featured stock found for today."}), 404
+
+    except Exception as e:
+        return jsonify({"error": "Unexpected error", "message": str(e)}), 500
+
+
+# App Initialization
 if __name__ == "__main__":
-    run_scraping()  # Run the scraping before starting the app
+    scrape_data()
     app.run(debug=True)
