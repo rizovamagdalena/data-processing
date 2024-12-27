@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const homePageStyles = {
@@ -80,6 +80,25 @@ const homePageStyles = {
 
 const Home = () => {
     const navigate = useNavigate();
+    const [featuredStock, setFeaturedStock] = useState(null);
+
+    useEffect(() => {
+        // Fetch the featured stock of the day from the backend
+        const fetchFeaturedStock = async () => {
+            try {
+                const response = await fetch("/api/featured-stock");  // Adjust the URL to your backend
+                if (!response.ok) {
+                    throw new Error("Failed to fetch featured stock");
+                }
+                const data = await response.json();
+                setFeaturedStock(data);  // Set the fetched data to state
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchFeaturedStock();
+    }, []);
 
     const goToPage = (page) => {
         navigate(`/${page}`);
@@ -90,21 +109,13 @@ const Home = () => {
             <div style={homePageStyles.hero}>Welcome to the Macedonian Stock Market</div>
             <div style={homePageStyles.tagline}>Stay ahead with insights, live prices, and trends of the Macedonian stock market.</div>
 
-            {/* Featured Stock Widget */}
-            <div style={homePageStyles.stockSnippet}>
-                <div style={homePageStyles.stockTitle}>Stock of the Day</div>
-                <div style={homePageStyles.stockDetails}>Macedonian Telecom (MKTEL)</div>
-                <div style={homePageStyles.stockDetails}>Current Price: MKD 300.20 (+3.5%)</div>
-                <div style={homePageStyles.stockDetails}>Market Cap: MKD 5B</div>
-            </div>
-
             {/* Buttons */}
             <div style={homePageStyles.buttonsContainer}>
                 <button style={homePageStyles.button} onClick={() => goToPage("search")}>
                     SEARCH STOCKS
                 </button>
                 <button style={homePageStyles.button} onClick={() => goToPage("most-traded")}>
-                    COMPANY LIST
+                    MOST TRADED STOCKS
                 </button>
                 <button style={homePageStyles.button} onClick={() => goToPage("stock-trends")}>
                     STOCK TRENDS
