@@ -36,7 +36,7 @@ class StockRepository:
     @staticmethod
     def insert_batch_data(batch_data):
         db = Database()
-        db.execute('''
+        db.executemany('''
             INSERT INTO stock_data (
                 code, date, last_price, max_price, min_price, avg_price,
                 percent_change, quantity, revenue_best_denars, total_revenue_denars
