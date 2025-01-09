@@ -9,5 +9,5 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 # Constants
-DATABASE_PATH = 'C:/Users/Dimitrij/PycharmProjects/DIANS_stockdata/stock_data_PROTOTYPE.db'
+DATABASE_PATH = 'C:/Users/Dimitrij/PycharmProjects/DIANS_stockdata/stock_data.db'
 STOCK_BASE_URL = 'https://www.mse.mk/mk/stats/symbolhistory/'
