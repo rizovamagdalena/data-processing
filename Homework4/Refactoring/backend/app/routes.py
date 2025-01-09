@@ -3,6 +3,7 @@ import sqlite3
 from flask import Blueprint, jsonify, request
 from src.backend.repositories.stock_repository import StockRepository
 
+
 stock_routes = Blueprint('stock_routes', __name__)
 
 @stock_routes.route('/api/stocks', methods=['GET'])
