@@ -42,6 +42,7 @@ class StockRepository:
                 percent_change, quantity, revenue_best_denars, total_revenue_denars
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', batch_data)
+        db.commit()
 
     @staticmethod
     def fetch_all_stock_codes():
