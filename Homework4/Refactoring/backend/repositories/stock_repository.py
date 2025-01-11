@@ -35,6 +35,7 @@ class StockRepository:
 
     @staticmethod
     def insert_batch_data(batch_data):
+        print(f"Inserting batch: {batch_data}")  # Debug statement
         db = Database()
         db.executemany('''
             INSERT INTO stock_data (
@@ -60,3 +61,22 @@ class StockRepository:
             params.extend([start_date, end_date])
         db.execute(query, params)
         return db.fetchall()
+
+    @staticmethod
+    def search_stock_data_by_code_in_interval(code, start_date=None, end_date=None):
+        db = Database()
+        query = "SELECT * FROM stock_data WHERE code = ?"
+        params = [code]
+        if start_date and end_date:
+            query += " AND date BETWEEN ? AND ?"
+            params.extend([start_date, end_date])
+        db.execute(query, params)
+        return db.fetchall()
+
+    @staticmethod
+    def search_stock_data_by_code(code):
+        db = Database()
+        query = "SELECT * FROM stock_data WHERE code LIKE ?"
+        db.execute(query, (f"{code}%",))
+        return db.fetchall()
+
