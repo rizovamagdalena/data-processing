@@ -32,15 +32,19 @@ def get_stock_data(code):
 def search_stocks():
     try:
         search_query = request.args.get('query', '').strip()
+
         if not search_query:
             return jsonify({"message": "Search query is required."}), 400
 
-        stock_codes = StockRepository.fetch_all_stock_codes()
+        all_stock_codes = StockRepository.fetch_all_stock_codes()
 
-        if not stock_codes:
-            return jsonify({"message": "No stocks match your code."}), 404
+        filtered_stock_codes = [code for code in all_stock_codes if code.lower().startswith(search_query.lower())]
 
-        return jsonify({"stocks": stock_codes}), 200
+        if not filtered_stock_codes:
+            return jsonify({"message": "No stocks match your query."}), 404
+
+        return jsonify({"stocks": filtered_stock_codes}), 200
+
     except sqlite3.DatabaseError as e:
         return jsonify({"error": "Database error", "message": str(e)}), 500
     except Exception as e:
