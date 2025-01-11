@@ -30,10 +30,6 @@ def get_stock_data(code):
 
 @stock_routes.route('/api/search', methods=['GET'])
 def search_stocks():
-    """
-    Searches stocks based on the query provided.
-    Matches stock codes starting with the search query.
-    """
     try:
         search_query = request.args.get('query', '').strip()
         if not search_query:
