@@ -31,7 +31,7 @@ class StockRepository:
         db = Database()
         db.execute("SELECT date FROM stock_data WHERE code = ? ORDER BY date DESC LIMIT 1", (stock_code,))
         result = db.fetchone()
-        return datetime.strptime(result[0], '%d.%m.%Y') if result else None
+        return datetime.strptime(result[0], '%Y-%m-%d') if result else None
 
     @staticmethod
     def insert_batch_data(batch_data):
@@ -63,7 +63,7 @@ class StockRepository:
         return db.fetchall()
 
     @staticmethod
-    def search_stock_data_by_code_in_interval(code, start_date=None, end_date=None):
+    def search_stock_data_by_code_in_interval(code, start_date, end_date):
         db = Database()
         query = "SELECT * FROM stock_data WHERE code = ?"
         params = [code]
@@ -71,7 +71,11 @@ class StockRepository:
             query += " AND date BETWEEN ? AND ?"
             params.extend([start_date, end_date])
         db.execute(query, params)
-        return db.fetchall()
+
+        data = db.fetchall()
+        print(data)
+
+        return data
 
     @staticmethod
     def search_stock_data_by_code(code):
