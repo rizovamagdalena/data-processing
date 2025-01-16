@@ -1,3 +1,5 @@
+#WORK IN PROGRESS
+
 import sqlite3
 from datetime import datetime, timedelta
 
@@ -22,21 +24,12 @@ def get_stock_data(code):
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
 
-        # Default to the last day if not provided
-        if not start_date_str:
-            start_date = datetime.now() - timedelta(days=1)  # Default to 1 day ago
-        else:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-
-        if not end_date_str:
-            end_date = datetime.now()  # Default to current date
-        else:
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-
-        print(f"start: {start_date}, end: {end_date}")  # Debugging output
+        #-----------------------------------------------------------------------------------
+        print(f"start: {start_date_str}, end: {end_date_str}")  # Debugging output
+        #------------------------------------------------------------------------------------
 
         # Fetch the stock data for the specified period
-        stock_data = StockRepository.search_stock_data_by_code_in_interval(code, start_date, end_date)
+        stock_data = StockRepository.search_stock_data_by_code_in_interval(code, start_date_str, end_date_str)
         if not stock_data:
             return jsonify({"message": f"No data found for stock code {code}."}), 404
 
@@ -67,3 +60,37 @@ def search_stocks():
         return jsonify({"error": "Database error", "message": str(e)}), 500
     except Exception as e:
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
+
+
+'''@stock_routes.route('/api/stock_indicators/<string:code>/<string:period>', methods=['GET'])
+def get_stock_indicators(code, period):
+    """
+    Fetches stock indicators (e.g., RSI, SMA, CCI) for a specific stock and time period.
+    """
+    try:
+        indicators = StockRepository.fetch_stock_indicators(code, period)
+
+        if not indicators:
+            return jsonify({"message": f"No indicators found for stock {code} and period {period}."}), 404
+
+        return jsonify({"indicators": indicators}), 200
+    except sqlite3.DatabaseError as e:
+        return jsonify({"error": "Database error", "message": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": "Unexpected error", "message": str(e)}), 500
+
+
+@stock_routes.route('/api/featured-stock', methods=['GET'])
+def get_featured_stock():
+    """
+    Fetch and return the featured stock of the day based on the highest percent change.
+    """
+    try:
+        featured_stock = StockRepository.fetch_featured_stock_of_the_day()
+
+        if featured_stock:
+            return jsonify({"featured_stock": featured_stock}), 200
+        else:
+            return jsonify({"message": "No featured stock found for today."}), 404
+    except Exception as e:
+        return jsonify({"error": "Unexpected error", "message": str(e)}), 500'''
