@@ -1,4 +1,5 @@
 # Service Layer
+
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -78,9 +79,11 @@ class StockService:
                                 cols = row.find_all("td")
                                 if len(cols) < 9:
                                     continue
+                                date = datetime.strptime(cols[0].get_text().strip(), '%d.%m.%Y')
                                 record = (
                                     stock_code,
-                                    cols[0].get_text().strip(),
+                                    date.strftime("%Y-%m-%d"),
+                                    #cols[0].get_text().strip(),
                                     StockService.format_price(cols[1].get_text()),
                                     StockService.format_price(cols[2].get_text()),
                                     StockService.format_price(cols[3].get_text()),
