@@ -24,10 +24,6 @@ def get_stock_data(code):
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
 
-        #-----------------------------------------------------------------------------------
-        print(f"start: {start_date_str}, end: {end_date_str}")  # Debugging output
-        #------------------------------------------------------------------------------------
-
         # Fetch the stock data for the specified period
         stock_data = StockRepository.search_stock_data_by_code_in_interval(code, start_date_str, end_date_str)
         if not stock_data:
