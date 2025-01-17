@@ -1,5 +1,3 @@
-//WORK IN PROGRESS
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
@@ -133,6 +131,14 @@ const DataInfo = () => {
                 currentDate.setFullYear(currentDate.getFullYear() - 1);
                 startDate = currentDate.toISOString().split("T")[0];
                 break;
+            case "2Y":
+                currentDate.setFullYear(currentDate.getFullYear() - 2);
+                startDate = currentDate.toISOString().split("T")[0];
+                break;
+            case "10Y":
+                currentDate.setFullYear(currentDate.getFullYear() - 10);
+                startDate = currentDate.toISOString().split("T")[0];
+                break;
             default:
                 startDate = endDate; // Default to same day if no period is selected
         }
@@ -141,6 +147,8 @@ const DataInfo = () => {
     };
 
     const { startDate, endDate } = getDatesForPeriod(selectedPeriod);
+
+    //console.log("Fetching data for period:", selectedPeriod, "Start:", startDate, "End:", endDate);
 
     try {
         // Pass start_date and end_date as query parameters
@@ -168,35 +176,30 @@ const DataInfo = () => {
             case "1D":
                 filteredData = stockInfo.filter((row) => {
                     const rowDate = parseDate(row[1]);
-                    console.log("1D:", row);
                     return isSameDay(rowDate, currentDate);
                 });
                 break;
             case "7D":
                 filteredData = stockInfo.filter((row) => {
                     const rowDate = parseDate(row[1]);
-                    console.log("7D:", row);
                     return currentTimestamp - rowDate.getTime() <= 7 * 24 * 60 * 60 * 1000;
                 });
                 break;
             case "1M":
                 filteredData = stockInfo.filter((row) => {
                     const rowDate = parseDate(row[1]);
-                    console.log("1M:", row);
                     return currentTimestamp - rowDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
                 });
                 break;
             case "1Y":
                 filteredData = stockInfo.filter((row) => {
                     const rowDate = parseDate(row[1]);
-                    console.log("1Y:", row);
                     return currentTimestamp - rowDate.getTime() <= 365 * 24 * 60 * 60 * 1000;
                 });
                 break;
             case "2Y":
                 filteredData = stockInfo.filter((row) => {
                     const rowDate = parseDate(row[1]);
-                    console.log("2Y:", row);
                     return currentTimestamp - rowDate.getTime() <= 730 * 24 * 60 * 60 * 1000;
                 });
                 break;
@@ -217,10 +220,10 @@ const DataInfo = () => {
     };
 
     useEffect(() => {
-        if (code) {
-            fetchStockInfo(code);
-        }
-    }, [code]);
+    if (code && selectedPeriod) {
+        fetchStockInfo(code);
+    }
+}, [code, selectedPeriod]);
 
     return (
         <div style={infoPageStyles.container}>
@@ -268,15 +271,15 @@ const DataInfo = () => {
                         <tbody>
                         {filteredStockInfo.map((row, index) => (
                             <tr key={index} style={infoPageStyles.tableRow}>
-                                <td style={infoPageStyles.tableData}>{row.date}</td>
-                                <td style={infoPageStyles.tableData}>{row.last_price}</td>
-                                <td style={infoPageStyles.tableData}>{row.max_price}</td>
-                                <td style={infoPageStyles.tableData}>{row.min_price}</td>
-                                <td style={infoPageStyles.tableData}>{row.avg_price}</td>
-                                <td style={infoPageStyles.tableData}>{row.percent_change}</td>
-                                <td style={infoPageStyles.tableData}>{row.quantity}</td>
-                                <td style={infoPageStyles.tableData}>{row.revenue_best_denars}</td>
-                                <td style={infoPageStyles.tableData}>{row.total_revenue_denars}</td>
+                                <td style={infoPageStyles.tableData}>{row[1]}</td>
+                                <td style={infoPageStyles.tableData}>{row[2]}</td>
+                                <td style={infoPageStyles.tableData}>{row[3]}</td>
+                                <td style={infoPageStyles.tableData}>{row[4]}</td>
+                                <td style={infoPageStyles.tableData}>{row[5]}</td>
+                                <td style={infoPageStyles.tableData}>{row[6]}</td>
+                                <td style={infoPageStyles.tableData}>{row[7]}</td>
+                                <td style={infoPageStyles.tableData}>{row[8]}</td>
+                                <td style={infoPageStyles.tableData}>{row[9]}</td>
                             </tr>
                         ))}
                         </tbody>
