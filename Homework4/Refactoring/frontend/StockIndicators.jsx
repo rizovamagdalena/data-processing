@@ -147,10 +147,10 @@ const StockIndicators = () => {
                     <tbody>
                     {stockData.map((indicator, index) => (
                         <tr key={index} style={index % 2 === 0 ? styles.rowEven : styles.rowOdd}>
-                            <td style={styles.cell}>{indicator[2]}</td>
+                            <td style={styles.cell}>{indicator[1]}</td>
+                            <td style={styles.cell}>{indicator[3]}</td>
                             <td style={styles.cell}>{indicator[4]}</td>
                             <td style={styles.cell}>{indicator[5]}</td>
-                            <td style={styles.cell}>{indicator[6]}</td>
                         </tr>
                     ))}
                     </tbody>
