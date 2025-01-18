@@ -107,7 +107,7 @@ const StockIndicators = () => {
     const fetchStockIndicators = async (code, period) => {
         setLoading(true);
         try {
-            const response = await axios.get(`http://localhost:5000/stock/stock_indicators/${code}/${period}`);
+            const response = await axios.get(`http://localhost:5000/api/stock_indicators/${code}/${period}`);
             //console.log("Stock Data:", response.data);
             setStockData(response.data.indicators);//setStockData(response.data)
         } catch (error) {
@@ -147,10 +147,10 @@ const StockIndicators = () => {
                     <tbody>
                     {stockData.map((indicator, index) => (
                         <tr key={index} style={index % 2 === 0 ? styles.rowEven : styles.rowOdd}>
-                            <td style={styles.cell}>{indicator.date}</td>
-                            <td style={styles.cell}>{indicator.cci}</td>
-                            <td style={styles.cell}>{indicator.vpt}</td>
-                            <td style={styles.cell}>{indicator.signal}</td>
+                            <td style={styles.cell}>{indicator[2]}</td>
+                            <td style={styles.cell}>{indicator[4]}</td>
+                            <td style={styles.cell}>{indicator[5]}</td>
+                            <td style={styles.cell}>{indicator[6]}</td>
                         </tr>
                     ))}
                     </tbody>
