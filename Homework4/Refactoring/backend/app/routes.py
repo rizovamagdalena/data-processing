@@ -58,13 +58,13 @@ def search_stocks():
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
 
 
-'''@stock_routes.route('/api/stock_indicators/<string:code>/<string:period>', methods=['GET'])
+@stock_routes.route('/api/stock_indicators/<string:code>/<string:period>', methods=['GET'])
 def get_stock_indicators(code, period):
     """
     Fetches stock indicators (e.g., RSI, SMA, CCI) for a specific stock and time period.
     """
     try:
-        indicators = StockRepository.fetch_stock_indicators(code, period)
+        indicators = TechnicalAnalysisRepository.TechnicalAnalysisRepository.fetch_stock_indicators_for_code_in_period(code, period)
 
         if not indicators:
             return jsonify({"message": f"No indicators found for stock {code} and period {period}."}), 404
@@ -75,7 +75,7 @@ def get_stock_indicators(code, period):
     except Exception as e:
         return jsonify({"error": "Unexpected error", "message": str(e)}), 500
 
-
+'''
 @stock_routes.route('/api/featured-stock', methods=['GET'])
 def get_featured_stock():
     """
