@@ -1,5 +1,6 @@
 # Repository Layer
 from datetime import datetime
+import pandas as pd
 
 from src.backend.models.database import Database
 
@@ -63,6 +64,18 @@ class StockRepository:
         return db.fetchall()
 
     @staticmethod
+    def fetch_all_stock_data(start_date=None, end_date=None):
+        db = Database()
+        query = "SELECT * FROM stock_data"
+        if start_date and end_date:
+            query += " AND date BETWEEN ? AND ?"
+            params=[start_date, end_date]
+            db.execute(query, params)
+        else:
+            db.execute(query)
+        return db.fetchall()
+
+    @staticmethod
     def search_stock_data_by_code_in_interval(code, start_date, end_date):
         db = Database()
         query = "SELECT * FROM stock_data WHERE code = ?"
@@ -83,4 +96,36 @@ class StockRepository:
         query = "SELECT * FROM stock_data WHERE code LIKE ?"
         db.execute(query, (f"{code}%",))
         return db.fetchall()
+#--------------------------------------------------------------------------------------------------------------------------
+    @staticmethod
+    def get_dataframe_with_numeric_columns():
+        df = pd.DataFrame(StockRepository.fetch_all_stock_data(),
+                          columns=['code', 'date', 'last_price', 'max_price', 'min_price', 'avg_price',
+                                   'percent_change', 'quantity', 'revenue_best_denars', 'total_revenue_denars'])
 
+        for col in ['last_price', 'max_price', 'min_price', 'avg_price']:
+            df[col] = pd.to_numeric(df[col].replace({',': ''}, regex=True), errors='coerce')
+
+        for col in ['quantity', 'revenue_best_denars', 'total_revenue_denars']:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        df['percent_change'] = pd.to_numeric(df['percent_change'], errors='coerce')
+
+        return df
+
+    @staticmethod
+    def clean_data():
+        df = StockRepository.get_dataframe_with_numeric_columns()
+
+        df = df.dropna(subset=['last_price', 'quantity', 'date'])
+
+        df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
+        return df
+
+    @staticmethod
+    def get_clean_stock_data_for_code(stock_code):
+        df = StockRepository.get_dataframe_with_numeric_columns()
+
+        df = df[df['code'] == stock_code]
+
+        return df.dropna(subset=['date', 'last_price', 'max_price', 'min_price'])
