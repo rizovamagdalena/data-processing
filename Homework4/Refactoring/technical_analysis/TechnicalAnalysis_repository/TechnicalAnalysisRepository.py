@@ -57,8 +57,6 @@ class TechnicalAnalysisRepository:
         elif period=='1M':
             start_date = (datetime.now() - timedelta(weeks=4)).strftime('%Y-%m-%d')
 
-        #else:
-        #    start_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
         db.execute(query, (f"{stock_code}%", start_date, end_date))
         return db.fetchall()
