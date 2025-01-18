@@ -61,12 +61,10 @@ class StockService:
                         refresh_button = driver.find_element(By.CSS_SELECTOR, ".btn.btn-primary-sm")
                         refresh_button.click()
 
-                        table_exists = driver.find_elements(By.ID, "resultsTable")
-
-                        if not table_exists:
-                            print(f"No results table found for {stock_code} from {from_date} to {to_date}.")
-                            scrape_from_date += timedelta(days=365)
-                            continue
+                        # Wait for the results table to load
+                        WebDriverWait(driver, 30).until(
+                            EC.presence_of_element_located((By.ID, "resultsTable"))
+                        )
 
                         # Get the updated HTML and parse it
                         updated_html = driver.page_source
