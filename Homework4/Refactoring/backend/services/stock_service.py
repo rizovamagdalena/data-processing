@@ -79,6 +79,8 @@ class StockService:
                                 cols = row.find_all("td")
                                 if len(cols) < 9:
                                     continue
+                                if str(cols[7].get_text()) == "0" and str(cols[8].get_text()) == "0":
+                                    continue
                                 date = datetime.strptime(cols[0].get_text().strip(), '%d.%m.%Y')
                                 record = (
                                     stock_code,
