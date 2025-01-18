@@ -12,13 +12,13 @@ class TechnicalAnalysisRepository:
     def initialize_database():
         db = Database()
         db.execute('''CREATE TABLE IF NOT EXISTS stock_indicators (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
         code TEXT,
         date TEXT,
         time_period TEXT,
         cci REAL,
         vpt REAL,
-        signal TEXT
+        signal TEXT,
+        PRIMARY KEY (code,date, time_period)
     );''')
         db.commit()
 
@@ -43,7 +43,7 @@ class TechnicalAnalysisRepository:
     def fetch_stock_indicators_for_code_in_period(stock_code, period='1D'):
         db = Database()
         query = "SELECT * FROM stock_indicators WHERE code LIKE ?"
-        query += " AND time_period BETWEEN ? AND ?"
+        query += " AND date BETWEEN ? AND ? AND time_period = ?"
 
         start_date = ''
         end_date = datetime.now().strftime('%Y-%m-%d')
@@ -58,5 +58,5 @@ class TechnicalAnalysisRepository:
             start_date = (datetime.now() - timedelta(weeks=4)).strftime('%Y-%m-%d')
 
 
-        db.execute(query, (f"{stock_code}%", start_date, end_date))
+        db.execute(query, (f"{stock_code}%", start_date, end_date, period))
         return db.fetchall()
