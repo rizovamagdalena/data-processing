@@ -1,6 +1,3 @@
-
-//go nema u Homework2
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { CircularProgress, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
@@ -96,7 +93,9 @@ const StockIndicators = () => {
         const fetchStockCodes = async () => {
             try {
                 const response = await axios.get("http://localhost:5000/api/stocks");
-                setStockCodes(Object.keys(response.data));
+                console.log("API Response:", response.data);
+                setStockCodes(response.data.stocks);//setStockCodes(Object.keys(response.data));
+                console.log("Stock Codes:", Object.keys(response.data));
             } catch (error) {
                 console.error("Error fetching stock codes:", error);
             }
@@ -109,7 +108,8 @@ const StockIndicators = () => {
         setLoading(true);
         try {
             const response = await axios.get(`http://localhost:5000/stock/stock_indicators/${code}/${period}`);
-            setStockData(response.data);
+            //console.log("Stock Data:", response.data);
+            setStockData(response.data.indicators);//setStockData(response.data)
         } catch (error) {
             console.error("Error fetching stock indicators:", error);
         }
@@ -173,6 +173,7 @@ const StockIndicators = () => {
                             onChange={handleStockChange}
                             style={styles.select}
                         >
+                            {/* Log stock codes */}
                             {stockCodes.map((code) => (
                                 <MenuItem key={code} value={code}>{code}</MenuItem>
                             ))}
