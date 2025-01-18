@@ -83,15 +83,15 @@ class StockService:
                                 record = (
                                     stock_code,
                                     date.strftime("%Y-%m-%d"),
-                                    #cols[0].get_text().strip(),
-                                    StockService.format_price(cols[1].get_text()),
-                                    StockService.format_price(cols[2].get_text()),
-                                    StockService.format_price(cols[3].get_text()),
-                                    StockService.format_price(cols[4].get_text()),
-                                    StockService.check_for_zero(cols[5].get_text()),
-                                    StockService.check_for_zero(cols[6].get_text()),
-                                    StockService.format_price(cols[7].get_text()),
-                                    StockService.format_price(cols[8].get_text()),
+                                    # cols[0].get_text().strip(),
+                                    StockService.format_price(cols[1].get_text().strip()),
+                                    StockService.format_price(cols[2].get_text().strip()),
+                                    StockService.format_price(cols[3].get_text().strip()),
+                                    StockService.format_price(cols[4].get_text().strip()),
+                                    StockService.check_for_zero(cols[5].get_text().strip()),
+                                    StockService.check_for_zero(cols[6].get_text().strip()),
+                                    StockService.format_price(cols[7].get_text().strip()),
+                                    StockService.format_price(cols[8].get_text().strip())
                                 )
                                 batch_data.append(record)
 
@@ -112,14 +112,20 @@ class StockService:
 
     @staticmethod
     def format_price(value):
-        """Format price to a consistent format with 2 decimal places."""
-        if not value:
-            return "0.00"
+
+        if not value or not value.strip():
+            return "0.00"  # Default to 0.00 if the value is empty
+
         try:
-            formatted_value = f"{float(value.replace(',', '.').replace('-', '').strip()):.2f}"
-            return f"-{formatted_value}" if value.startswith('-') else formatted_value
-        except ValueError:
-            return "0.00"
+            # Replace thousands separator '.' with '' and decimal separator ',' with '.'
+            cleaned_value = value.replace('.', '').replace(',', '.').strip()
+            # Convert to float and format to 2 decimal places
+            formatted_value = f"{float(cleaned_value):.2f}"
+            return formatted_value
+        except ValueError as e:
+            # Log an error for unexpected formats
+            print(f"Error formatting price '{value}': {e}")
+            return "0.00"  # Return default value if parsing fails
 
     @staticmethod
     def check_for_zero(value):
