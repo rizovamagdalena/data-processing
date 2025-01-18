@@ -60,9 +60,6 @@ def search_stocks():
 
 @stock_routes.route('/api/stock_indicators/<string:code>/<string:period>', methods=['GET'])
 def get_stock_indicators(code, period):
-    """
-    Fetches stock indicators (e.g., RSI, SMA, CCI) for a specific stock and time period.
-    """
     try:
         indicators = TechnicalAnalysisRepository.TechnicalAnalysisRepository.fetch_stock_indicators_for_code_in_period(code, period)
 
