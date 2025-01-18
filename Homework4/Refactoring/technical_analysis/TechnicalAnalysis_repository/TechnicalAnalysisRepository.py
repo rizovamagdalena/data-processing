@@ -40,7 +40,7 @@ class TechnicalAnalysisRepository:
         db.commit()
 
     @staticmethod
-    def fetch_stock_indicators_for_code_in_period(stock_code, period):
+    def fetch_stock_indicators_for_code_in_period(stock_code, period='1D'):
         db = Database()
         query = "SELECT * FROM stock_indicators WHERE code LIKE ?"
         query += " AND time_period BETWEEN ? AND ?"
@@ -51,11 +51,14 @@ class TechnicalAnalysisRepository:
         if period=='1D':
             start_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
-        if period=='1W':
+        elif period=='1W':
             start_date = (datetime.now() - timedelta(weeks=1)).strftime('%Y-%m-%d')
 
-        if period=='1M':
+        elif period=='1M':
             start_date = (datetime.now() - timedelta(weeks=4)).strftime('%Y-%m-%d')
+
+        #else:
+        #    start_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
         db.execute(query, (f"{stock_code}%", start_date, end_date))
         return db.fetchall()
