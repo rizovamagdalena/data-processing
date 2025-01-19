@@ -54,7 +54,6 @@ def start_scheduler():
 if __name__ == "__main__":
     # Start the scheduler for periodic tasks
     start_scheduler()
-    # start_scraping_task() #JUST FOR TEST PURPOSES
 
 
     # Run the Flask application
