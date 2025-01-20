@@ -10,23 +10,6 @@ class StockRepository:
     """Handles database operations for stock data."""
 
     @staticmethod
-    def initialize_database():
-        db = Database()
-        db.execute('''
-            CREATE TABLE IF NOT EXISTS stock_data (
-                code TEXT,
-                date TEXT,
-                last_price TEXT,
-                max_price TEXT,
-                min_price TEXT,
-                avg_price TEXT,
-                percent_change TEXT,
-                quantity TEXT,
-                revenue_best_denars TEXT,
-                total_revenue_denars TEXT,
-                UNIQUE(code, date) ON CONFLICT IGNORE
-            )
-        ''')
 
     @staticmethod
     def get_latest_date(stock_code):
@@ -35,17 +18,7 @@ class StockRepository:
         result = db.fetchone()
         return datetime.strptime(result[0], '%Y-%m-%d') if result else None
 
-    @staticmethod
-    def insert_batch_data(batch_data):
-        print(f"Inserting batch: {batch_data}")  # Debug statement
-        db = Database()
-        db.executemany('''
-            INSERT INTO stock_data (
-                code, date, last_price, max_price, min_price, avg_price,
-                percent_change, quantity, revenue_best_denars, total_revenue_denars
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', batch_data)
-        db.commit()
+
 
     @staticmethod
     def fetch_all_stock_codes():
